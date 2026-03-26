@@ -38,7 +38,11 @@ metadata:
   name: workshop-config
   namespace: rhai-workshop-plugin
 data:
-  tutorialUrl: "https://eformat.github.io/voice-agents/voice-agents/index.html"
+  tutorialUrls: |
+    [
+      {"name": "Voice Agents", "url": "https://eformat.github.io/voice-agents/voice-agents/index.html"},
+      {"name": "Rainforest", "url": "https://eformat.github.io/rainforest-docs"}
+    ]
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -103,11 +107,11 @@ spec:
         - -c
         - |
           OPENSHIFT_AI_URL=$(kubectl get consolelink rhodslink -o jsonpath='{.spec.href}' 2>/dev/null || echo "")
-          TUTORIAL_URL=$(cat /config/tutorialUrl)
+          TUTORIAL_URLS=$(cat /config/tutorialUrls)
           cat > /config-out/config.json <<EOF
           {
             "openshiftAiUrl": "${OPENSHIFT_AI_URL}",
-            "tutorialUrl": "${TUTORIAL_URL}"
+            "tutorialUrls": ${TUTORIAL_URLS}
           }
           EOF
         volumeMounts:

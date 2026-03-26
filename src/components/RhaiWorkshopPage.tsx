@@ -1,14 +1,23 @@
 import * as React from 'react';
 import Helmet from 'react-helmet';
+import { Tabs, Tab, TabTitleText } from '@patternfly/react-core';
+
+interface TutorialEntry {
+  name: string;
+  url: string;
+}
 
 interface WorkshopConfig {
   openshiftAiUrl: string;
-  tutorialUrl: string;
+  tutorialUrls: TutorialEntry[];
 }
 
 const DEFAULT_CONFIG: WorkshopConfig = {
   openshiftAiUrl: 'https://data-science-gateway.apps.ocp.cloud.rhai-tmm.dev/',
-  tutorialUrl: 'https://eformat.github.io/voice-agents/voice-agents/index.html',
+  tutorialUrls: [
+    { name: 'Voice Agents', url: 'https://eformat.github.io/voice-agents/voice-agents/index.html' },
+    { name: 'Rainforest', url: 'https://eformat.github.io/rainforest-docs' },
+  ],
 };
 
 function useWorkshopConfig(): WorkshopConfig {
@@ -20,8 +29,11 @@ function useWorkshopConfig(): WorkshopConfig {
         if (res.ok) return res.json();
         throw new Error('config not found');
       })
-      .then((data: Partial<WorkshopConfig>) => {
-        setConfig((prev) => ({ ...prev, ...data }));
+      .then((data: any) => {
+        const merged: Partial<WorkshopConfig> = {};
+        if (data.openshiftAiUrl) merged.openshiftAiUrl = data.openshiftAiUrl;
+        if (Array.isArray(data.tutorialUrls)) merged.tutorialUrls = data.tutorialUrls;
+        setConfig((prev) => ({ ...prev, ...merged }));
       })
       .catch(() => {});
   }, []);
@@ -31,8 +43,6 @@ function useWorkshopConfig(): WorkshopConfig {
 
 // Find the xterm textarea in the active terminal tab and paste text into it.
 function pasteIntoTerminal(text: string) {
-  // Target the active tab panel so paste goes to whichever terminal
-  // the user has selected. Inactive panels have the `hidden` attribute.
   const activePanel = document.querySelector(
     'section[role="tabpanel"]:not([hidden])',
   );
@@ -56,10 +66,10 @@ function pasteIntoTerminal(text: string) {
 export default function RhaiWorkshopPage() {
   const config = useWorkshopConfig();
   const [leftWidth, setLeftWidth] = React.useState(50);
+  const [activeTab, setActiveTab] = React.useState(0);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const dragging = React.useRef(false);
 
-  // Listen for postMessage from the tutorial iframe.
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'copy' && typeof event.data.text === 'string') {
@@ -70,7 +80,6 @@ export default function RhaiWorkshopPage() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // Auto-open the web terminal on page load.
   React.useEffect(() => {
     const openTerminal = () => {
       const btn = document.querySelector(
@@ -89,7 +98,6 @@ export default function RhaiWorkshopPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Splitter drag handlers
   const onMouseDown = React.useCallback(() => {
     dragging.current = true;
   }, []);
@@ -99,7 +107,6 @@ export default function RhaiWorkshopPage() {
       if (!dragging.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const pct = ((e.clientX - rect.left) / rect.width) * 100;
-      // Clamp between 20% and 80%
       setLeftWidth(Math.min(80, Math.max(20, pct)));
     };
     const onMouseUp = () => {
@@ -112,6 +119,9 @@ export default function RhaiWorkshopPage() {
       document.removeEventListener('mouseup', onMouseUp);
     };
   }, []);
+
+  const showTabs = config.tutorialUrls.length > 1;
+  const currentUrl = config.tutorialUrls[activeTab]?.url || '';
 
   return (
     <>
@@ -158,20 +168,45 @@ export default function RhaiWorkshopPage() {
               height: '24px',
               borderLeft: '1px solid #8a8d90',
               borderRight: '1px solid #8a8d90',
-              gap: '2px',
             }}
           />
         </div>
-        <iframe
-          title="Tutorial"
+        {/* Right pane: tabs + tutorial iframe */}
+        <div
           style={{
             width: `${100 - leftWidth}%`,
-            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
             height: '100%',
-            pointerEvents: dragging.current ? 'none' : 'auto',
           }}
-          src={config.tutorialUrl}
-        />
+        >
+          {showTabs && (
+            <Tabs
+              activeKey={activeTab}
+              onSelect={(_e, key) => setActiveTab(key as number)}
+              isBox={false}
+              style={{ flexShrink: 0 }}
+            >
+              {config.tutorialUrls.map((entry, idx) => (
+                <Tab
+                  key={idx}
+                  eventKey={idx}
+                  title={<TabTitleText>{entry.name}</TabTitleText>}
+                />
+              ))}
+            </Tabs>
+          )}
+          <iframe
+            title="Tutorial"
+            style={{
+              flex: 1,
+              border: 'none',
+              width: '100%',
+              pointerEvents: dragging.current ? 'none' : 'auto',
+            }}
+            src={currentUrl}
+          />
+        </div>
       </div>
     </>
   );
