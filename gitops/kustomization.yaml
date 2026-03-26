@@ -1,15 +1,2 @@
 resources:
 - rhai-workshop-deploy.yaml
-- console.yaml
-
-patches:
-  - patch: |-
-      - op: add
-        path: "/spec/plugins"
-        value:
-          - rhai-workshop-plugin
-    target:
-      group: operator.openshift.io
-      kind: Console
-      version: v1
-      name: cluster

@@ -21,7 +21,7 @@ The plugin fetches `/api/plugins/rhai-workshop-plugin/config.json` at runtime. T
 - **`openshiftAiUrl`** — auto-discovered from the cluster via `kubectl get consolelink rhodslink -o jsonpath='{.spec.href}'`. No manual config needed.
 - **`tutorialUrls`** — set manually in the `workshop-config` ConfigMap in `gitops/rhai-workshop-deploy.yaml`.
 
-The init container uses a ServiceAccount (`rhai-workshop-plugin`) with a ClusterRole that grants read access to `consolelinks`. It reads `tutorialUrls` from the ConfigMap and `openshiftAiUrl` from the cluster, then writes `config.json` to a shared `emptyDir` volume that nginx serves.
+The init container uses a ServiceAccount (`rhai-workshop-plugin`) with a ClusterRole that grants read access to `consolelinks` and patch access to `consoles`. It reads `tutorialUrls` from the ConfigMap and `openshiftAiUrl` from the cluster, then writes `config.json` to a shared `emptyDir` volume that nginx serves. It also automatically enables the console plugin by appending it to the existing plugins list (without removing other plugins).
 
 `tutorialUrls` is a JSON array of `{"name": "...", "url": "..."}` objects. When multiple tutorials are configured, PatternFly tabs appear at the top of the right pane. With a single entry, no tabs are shown.
 
@@ -76,7 +76,7 @@ oc apply -f some-resource.yaml
 make podman-build
 make podman-push-nobuild
 
-# Deploy via GitOps
+# Deploy via GitOps (plugin is auto-enabled by the init container)
 oc apply -k ./gitops
 
 # Restart after image update

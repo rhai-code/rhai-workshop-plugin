@@ -58,6 +58,9 @@ rules:
 - apiGroups: ["console.openshift.io"]
   resources: ["consolelinks"]
   verbs: ["get"]
+- apiGroups: ["operator.openshift.io"]
+  resources: ["consoles"]
+  verbs: ["get", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -106,6 +109,17 @@ spec:
         - /bin/sh
         - -c
         - |
+          # Enable the console plugin if not already enabled
+          PLUGIN=rhai-workshop-plugin
+          if kubectl get consoles.operator.openshift.io cluster -o jsonpath='{.spec.plugins}' 2>/dev/null | grep -q "$PLUGIN"; then
+            echo "Plugin $PLUGIN already enabled"
+          else
+            kubectl patch consoles.operator.openshift.io cluster --type=json \
+              -p="[{\"op\":\"add\",\"path\":\"/spec/plugins/-\",\"value\":\"$PLUGIN\"}]"
+            echo "Plugin $PLUGIN enabled"
+          fi
+
+          # Generate config.json
           OPENSHIFT_AI_URL=$(kubectl get consolelink rhodslink -o jsonpath='{.spec.href}' 2>/dev/null || echo "")
           TUTORIAL_URLS=$(cat /config/tutorialUrls)
           cat > /config-out/config.json <<EOF

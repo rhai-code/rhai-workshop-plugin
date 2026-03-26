@@ -7,7 +7,7 @@ See [CLAUDE.md](CLAUDE.md) for more details.
 Install using a GitOps approach and kustomize:
 
 ```bash
-oc apply -k ./gitops
+oc apply -k ./gitops --server-side --force-conflicts
 ```
 
 Or manually
