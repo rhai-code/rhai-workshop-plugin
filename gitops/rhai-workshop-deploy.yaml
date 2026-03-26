@@ -1,0 +1,191 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rhai-workshop-plugin
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: rhai-workshop-plugin
+    app.kubernetes.io/part-of: rhai-workshop-plugin
+  name: nginx-conf
+  namespace: rhai-workshop-plugin
+data:
+  nginx.conf: |
+    error_log /dev/stdout info;
+    events {}
+    http {
+      access_log         /dev/stdout;
+      include            /etc/nginx/mime.types;
+      default_type       application/octet-stream;
+      keepalive_timeout  65;
+      server {
+        listen              9443 ssl;
+        ssl_certificate     /var/serving-cert/tls.crt;
+        ssl_certificate_key /var/serving-cert/tls.key;
+        root                /usr/share/nginx/html;
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: rhai-workshop-plugin
+    app.kubernetes.io/part-of: rhai-workshop-plugin
+  name: workshop-config
+  namespace: rhai-workshop-plugin
+data:
+  tutorialUrl: "https://eformat.github.io/voice-agents/voice-agents/index.html"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rhai-workshop-plugin
+  namespace: rhai-workshop-plugin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rhai-workshop-consolelink-reader
+rules:
+- apiGroups: ["console.openshift.io"]
+  resources: ["consolelinks"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rhai-workshop-consolelink-reader
+subjects:
+- kind: ServiceAccount
+  name: rhai-workshop-plugin
+  namespace: rhai-workshop-plugin
+roleRef:
+  kind: ClusterRole
+  name: rhai-workshop-consolelink-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: rhai-workshop-plugin
+    app.kubernetes.io/component: rhai-workshop-plugin
+    app.kubernetes.io/instance: rhai-workshop-plugin
+    app.kubernetes.io/part-of: rhai-workshop-plugin
+    app.openshift.io/runtime-namespace: rhai-workshop-plugin
+  name: rhai-workshop-plugin
+  namespace: rhai-workshop-plugin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rhai-workshop-plugin
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: rhai-workshop-plugin
+    spec:
+      serviceAccountName: rhai-workshop-plugin
+      initContainers:
+      - name: config-init
+        image: registry.redhat.io/openshift4/ose-cli:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          OPENSHIFT_AI_URL=$(kubectl get consolelink rhodslink -o jsonpath='{.spec.href}' 2>/dev/null || echo "")
+          TUTORIAL_URL=$(cat /config/tutorialUrl)
+          cat > /config-out/config.json <<EOF
+          {
+            "openshiftAiUrl": "${OPENSHIFT_AI_URL}",
+            "tutorialUrl": "${TUTORIAL_URL}"
+          }
+          EOF
+        volumeMounts:
+        - mountPath: /config
+          name: workshop-config
+          readOnly: true
+        - mountPath: /config-out
+          name: generated-config
+      containers:
+      - image: quay.io/eformat/rhai-workshop-plugin:latest
+        imagePullPolicy: Always
+        name: rhai-workshop-plugin
+        ports:
+        - containerPort: 9443
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /var/serving-cert
+          name: plugin-serving-cert
+          readOnly: true
+        - mountPath: /etc/nginx/nginx.conf
+          name: nginx-conf
+          readOnly: true
+          subPath: nginx.conf
+        - mountPath: /usr/share/nginx/html/config.json
+          name: generated-config
+          readOnly: true
+          subPath: config.json
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      volumes:
+      - name: plugin-serving-cert
+        secret:
+          defaultMode: 420
+          secretName: plugin-serving-cert
+      - name: nginx-conf
+        configMap:
+          defaultMode: 420
+          name: nginx-conf
+      - name: workshop-config
+        configMap:
+          defaultMode: 420
+          name: workshop-config
+      - name: generated-config
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.openshift.io/serving-cert-secret-name: plugin-serving-cert
+  labels:
+    app: rhai-workshop-plugin
+    app.kubernetes.io/component: rhai-workshop-plugin
+    app.kubernetes.io/instance: rhai-workshop-plugin
+    app.kubernetes.io/part-of: rhai-workshop-plugin
+  name: rhai-workshop-plugin
+  namespace: rhai-workshop-plugin
+spec:
+  ports:
+  - name: 9443-tcp
+    port: 9443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    app: rhai-workshop-plugin
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  name: rhai-workshop-plugin
+spec:
+  displayName: RHAI Workshop Plugin
+  backend:
+    type: Service
+    service:
+      basePath: /
+      name: rhai-workshop-plugin
+      namespace: rhai-workshop-plugin
+      port: 9443
