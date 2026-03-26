@@ -37,7 +37,11 @@ metadata:
     app: rhai-workshop-plugin
     app.kubernetes.io/part-of: rhai-workshop-plugin
 data:
-  tutorialUrl: 'https://eformat.github.io/voice-agents/voice-agents/index.html'
+  tutorialUrls: |
+    [
+      {"name": "Voice Agents", "url": "https://eformat.github.io/voice-agents/voice-agents/index.html"},
+      {"name": "Rainforest", "url": "https://eformat.github.io/rainforest-docs"}
+    ]
 ```
 
 and then restart pod.
