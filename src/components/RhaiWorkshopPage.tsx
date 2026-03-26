@@ -55,11 +55,11 @@ function pasteIntoTerminal(text: string) {
 
 export default function RhaiWorkshopPage() {
   const config = useWorkshopConfig();
+  const [leftWidth, setLeftWidth] = React.useState(50);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const dragging = React.useRef(false);
 
   // Listen for postMessage from the tutorial iframe.
-  // When a copy button is clicked in the tutorial, it should send:
-  //   window.parent.postMessage({ type: 'copy', text: 'the command' }, '*')
-  // We then auto-paste that text into the web terminal.
   React.useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'copy' && typeof event.data.text === 'string') {
@@ -89,12 +89,37 @@ export default function RhaiWorkshopPage() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Splitter drag handlers
+  const onMouseDown = React.useCallback(() => {
+    dragging.current = true;
+  }, []);
+
+  React.useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragging.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const pct = ((e.clientX - rect.left) / rect.width) * 100;
+      // Clamp between 20% and 80%
+      setLeftWidth(Math.min(80, Math.max(20, pct)));
+    };
+    const onMouseUp = () => {
+      dragging.current = false;
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }, []);
+
   return (
     <>
       <Helmet>
         <title>RHAI Workshop</title>
       </Helmet>
       <div
+        ref={containerRef}
         style={{
           display: 'flex',
           flexDirection: 'row',
@@ -105,19 +130,45 @@ export default function RhaiWorkshopPage() {
         <iframe
           title="OpenShift AI"
           style={{
-            flex: 1,
+            width: `${leftWidth}%`,
             border: 'none',
-            borderRight: '2px solid #d2d2d2',
             height: '100%',
+            pointerEvents: dragging.current ? 'none' : 'auto',
           }}
           src={config.openshiftAiUrl}
         />
+        {/* Resizable splitter */}
+        <div
+          onMouseDown={onMouseDown}
+          style={{
+            width: '6px',
+            cursor: 'col-resize',
+            backgroundColor: '#d2d2d2',
+            flexShrink: 0,
+            position: 'relative',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '2px',
+              height: '24px',
+              borderLeft: '1px solid #8a8d90',
+              borderRight: '1px solid #8a8d90',
+              gap: '2px',
+            }}
+          />
+        </div>
         <iframe
           title="Tutorial"
           style={{
-            flex: 1,
+            width: `${100 - leftWidth}%`,
             border: 'none',
             height: '100%',
+            pointerEvents: dragging.current ? 'none' : 'auto',
           }}
           src={config.tutorialUrl}
         />
