@@ -25,6 +25,27 @@ oc patch consoles.operator.openshift.io cluster \
   --patch '{ "spec": { "plugins": ["rhai-workshop-plugin"] } }' --type=merge
 ```
 
+To configure/change the tutorial:
+
+```yaml
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: workshop-config
+  namespace: rhai-workshop-plugin
+  labels:
+    app: rhai-workshop-plugin
+    app.kubernetes.io/part-of: rhai-workshop-plugin
+data:
+  tutorialUrl: 'https://eformat.github.io/voice-agents/voice-agents/index.html'
+```
+
+and then restart pod.
+
+```bash
+oc rollout restart deployment/rhai-workshop-plugin -n rhai-workshop-plugin
+```
+
 ![wkshop-plugin-demo.png](wkshop-plugin-demo.png)
 
 ## Build image locally
