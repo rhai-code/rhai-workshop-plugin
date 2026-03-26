@@ -47,6 +47,26 @@ oc apply -f some-resource.yaml
 ----
 ```
 
+- For Markdown copy-n-paste - just use the event - [see the code example here.](https://github.com/eformat/rainforest-docs/blob/main/index.html#L144-L157)
+
+```html
+  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code"></script>
+  <script>
+    // Send copied code to parent frame (rhai-workshop-plugin) for auto-paste into terminal
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.docsify-copy-code-button');
+      if (!btn) return;
+      var pre = btn.closest('pre');
+      if (!pre) return;
+      var code = pre.querySelector('code');
+      var text = (code || pre).textContent.trim();
+      if (text && window.parent !== window) {
+        window.parent.postMessage({ type: 'copy', text: text }, '*');
+      }
+    });
+  </script>
+```
+
 ## Build & Deploy
 
 ```bash
