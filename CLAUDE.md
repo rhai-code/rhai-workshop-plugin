@@ -1,5 +1,9 @@
 # rhai-workshop-plugin
 
+## Dependencies
+
+- **rhai-nav-plugin** must be deployed first — it defines the "RHAI" top-level navigation section that this plugin's nav item references.
+
 ## Layout
 
 A Console Plugin that contains 2 iframes.

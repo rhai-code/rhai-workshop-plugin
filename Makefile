@@ -3,6 +3,7 @@ REGISTRY ?= quay.io
 REPOSITORY ?= $(REGISTRY)/eformat/rhai-workshop-plugin
 
 IMG := $(REPOSITORY):latest
+PODMAN_ARGS ?=
 
 # clean compile
 compile:
@@ -14,14 +15,14 @@ podman-login:
 
 # Build the oci image no compile
 podman-build-nocompile:
-	podman build --no-cache . -t ${IMG} -f Containerfile
+	podman build $(PODMAN_ARGS) . -t ${IMG} -f Containerfile
 
 # Build the oci image
 podman-build: compile
-	podman build . -t ${IMG} -f Containerfile
+	podman build $(PODMAN_ARGS) . -t ${IMG} -f Containerfile
 
 # Push the oci image
-podman-push:
+podman-push: podman-build
 	podman push ${IMG}
 
 # Push the oci image
