@@ -52,6 +52,8 @@ and then restart pod.
 oc rollout restart deployment/rhai-workshop-plugin -n rhai-workshop-plugin
 ```
 
+Supports opening the OpenShift Console within the plugin for ease-of-use when you install the [Browser Extension](BROWSER_EXTENSTIONS.md).
+
 ![wkshop-plugin-demo.png](wkshop-plugin-demo.png)
 
 ## Build image locally
