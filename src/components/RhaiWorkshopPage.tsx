@@ -12,6 +12,7 @@ import {
 import AngleDownIcon from '@patternfly/react-icons/dist/esm/icons/angle-down-icon';
 import AngleUpIcon from '@patternfly/react-icons/dist/esm/icons/angle-up-icon';
 import ArrowRightIcon from '@patternfly/react-icons/dist/esm/icons/arrow-right-icon';
+import SyncAltIcon from '@patternfly/react-icons/dist/esm/icons/sync-alt-icon';
 
 interface TutorialEntry {
   name: string;
@@ -81,6 +82,7 @@ export default function RhaiWorkshopPage() {
   const [leftUrl, setLeftUrl] = React.useState(config.openshiftAiUrl);
   const [urlInput, setUrlInput] = React.useState(config.openshiftAiUrl);
   const [urlBarOpen, setUrlBarOpen] = React.useState(false);
+  const [leftKey, setLeftKey] = React.useState(0);
   const userNavigated = React.useRef(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const dragging = React.useRef(false);
@@ -210,10 +212,16 @@ export default function RhaiWorkshopPage() {
                     <ArrowRightIcon />
                   </Button>
                 </InputGroupItem>
+                <InputGroupItem>
+                  <Button variant="control" onClick={() => setLeftKey((k) => k + 1)} aria-label="Refresh">
+                    <SyncAltIcon />
+                  </Button>
+                </InputGroupItem>
               </InputGroup>
             )}
           </div>
           <iframe
+            key={leftKey}
             title="OpenShift AI"
             style={{
               flex: 1,
