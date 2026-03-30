@@ -349,6 +349,7 @@ export default function RhaiWorkshopPage() {
           )}
           <iframe
             title="Tutorial"
+            allow="clipboard-read; clipboard-write"
             style={{
               flex: 1,
               border: 'none',
