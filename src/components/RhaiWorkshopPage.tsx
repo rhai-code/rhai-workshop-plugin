@@ -5,14 +5,11 @@ import {
   Tab,
   TabTitleText,
   Button,
-  Popover,
   SearchInput,
 } from '@patternfly/react-core';
 import AngleDownIcon from '@patternfly/react-icons/dist/esm/icons/angle-down-icon';
 import AngleUpIcon from '@patternfly/react-icons/dist/esm/icons/angle-up-icon';
 import SyncAltIcon from '@patternfly/react-icons/dist/esm/icons/sync-alt-icon';
-import DownloadIcon from '@patternfly/react-icons/dist/esm/icons/download-icon';
-import { downloadChromeExtension, downloadFirefoxExtension } from './extensionGenerator';
 
 interface TutorialEntry {
   name: string;
@@ -218,44 +215,6 @@ export default function RhaiWorkshopPage() {
             </Button>
             {urlBarOpen && (
               <>
-                <Popover
-                  headerContent="Iframe Unblocker Extension"
-                  bodyContent={
-                    <div>
-                      <p style={{ marginBottom: '8px' }}>
-                        Some sites (e.g. OpenShift Console) block iframe embedding.
-                        Install this browser extension to allow it.
-                      </p>
-                      <p style={{ marginBottom: '12px', fontSize: '12px', color: '#6a6e73' }}>
-                        Auto-configured for: <strong>{window.location.hostname}</strong>
-                      </p>
-                      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                        <Button variant="primary" size="sm" onClick={downloadChromeExtension}>
-                          Chrome
-                        </Button>
-                        <Button variant="secondary" size="sm" onClick={downloadFirefoxExtension}>
-                          Firefox
-                        </Button>
-                      </div>
-                      <p style={{ fontSize: '12px', color: '#6a6e73' }}>
-                        <strong>Chrome:</strong> Unzip, open chrome://extensions, enable Developer
-                        mode, click Load unpacked, select the folder.
-                      </p>
-                      <p style={{ fontSize: '12px', color: '#6a6e73', marginTop: '4px' }}>
-                        <strong>Firefox:</strong> Unzip, open about:debugging#/runtime/this-firefox,
-                        click Load Temporary Add-on, select manifest.json.
-                      </p>
-                    </div>
-                  }
-                >
-                  <Button
-                    variant="plain"
-                    aria-label="Download iframe unblocker extension"
-                    style={{ padding: '4px 8px' }}
-                  >
-                    <DownloadIcon />
-                  </Button>
-                </Popover>
                 <SearchInput
                   style={{ flex: 1, marginRight: '4px' }}
                   aria-label="URL"

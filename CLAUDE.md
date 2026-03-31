@@ -18,20 +18,13 @@ The left pane has a collapsible URL bar (PatternFly `SearchInput`) with:
 - **Back/forward navigation** through URL history
 - **Search/Go button** to navigate to a new URL (auto-prepends `https://` if missing)
 - **Refresh button** to reload the current page
-- **Download button** for the iframe unblocker browser extension (see below)
-
 2. Right Half of the screen. Configurable tutorial links e.g. `https://eformat.github.io/voice-agents/voice-agents/index.html`
 
 We also open the OpenShift command line terminal - this is always at the bottom of the page - full width.
 
-## Browser Extension (Iframe Unblocker)
+## Iframe Embedding (IngressController Patch)
 
-The OpenShift console sets `X-Frame-Options: DENY` and `Content-Security-Policy: frame-ancestors 'none'` which prevents it from being embedded in an iframe. The plugin includes a dynamically generated browser extension that strips these headers for the current cluster's console hostname.
-
-- Click the download icon in the URL bar to get Chrome or Firefox extension zips
-- Extensions are generated client-side (`src/components/extensionGenerator.ts`) with the correct hostname from `window.location.hostname`
-- Only affects `sub_frame` (iframe) requests to the console — regular browsing is unaffected
-- See `BROWSER_EXTENSIONS.md` for installation instructions
+The OpenShift console sets `X-Frame-Options: DENY` and `Content-Security-Policy: frame-ancestors 'none'; frame-src 'none'` which prevents iframe embedding. The init container automatically patches the default IngressController to **delete** both the `X-Frame-Options` and `Content-Security-Policy` response headers. This affects all routes through the default ingress controller — acceptable for a workshop cluster.
 
 ## Configuration
 
@@ -40,7 +33,7 @@ The plugin fetches `/api/plugins/rhai-workshop-plugin/config.json` at runtime. T
 - **`openshiftAiUrl`** — auto-discovered from the cluster via `kubectl get consolelink rhodslink -o jsonpath='{.spec.href}'`. No manual config needed.
 - **`tutorialUrls`** — set manually in the `workshop-config` ConfigMap in `gitops/rhai-workshop-deploy.yaml`.
 
-The init container uses a ServiceAccount (`rhai-workshop-plugin`) with a ClusterRole that grants read access to `consolelinks` and patch access to `consoles`. It reads `tutorialUrls` from the ConfigMap and `openshiftAiUrl` from the cluster, then writes `config.json` to a shared `emptyDir` volume that nginx serves. It also automatically enables the console plugin by appending it to the existing plugins list (without removing other plugins).
+The init container uses a ServiceAccount (`rhai-workshop-plugin`) with a ClusterRole that grants read access to `consolelinks` and `ingresses`, and patch access to `consoles` and `ingresscontrollers`. It reads `tutorialUrls` from the ConfigMap and `openshiftAiUrl` from the cluster, patches the IngressController for iframe embedding, then writes `config.json` to a shared `emptyDir` volume that nginx serves. It also automatically enables the console plugin by appending it to the existing plugins list (without removing other plugins).
 
 `tutorialUrls` is a JSON array of `{"name": "...", "url": "..."}` objects. When multiple tutorials are configured, PatternFly tabs appear at the top of the right pane. With a single entry, no tabs are shown.
 
@@ -105,8 +98,6 @@ oc rollout restart deployment/rhai-workshop-plugin -n rhai-workshop-plugin
 ## Project Structure
 
 - `src/components/RhaiWorkshopPage.tsx` - Main plugin component (iframes, URL bar with history, postMessage listener, terminal auto-open, paste logic)
-- `src/components/extensionGenerator.ts` - Client-side browser extension zip generator (Chrome & Firefox) with minimal zip implementation
 - `console-extensions.json` - Plugin route (`/rhai-workshop`) and nav entry
 - `gitops/` - Kubernetes manifests (Namespace, ServiceAccount, ClusterRole, ClusterRoleBinding, ConfigMaps, Deployment, Service, ConsolePlugin)
-- `BROWSER_EXTENSIONS.md` - Installation instructions for the iframe unblocker extensions
 - `Makefile` - Build/push targets using podman
