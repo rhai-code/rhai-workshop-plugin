@@ -19,6 +19,7 @@ interface TutorialEntry {
 interface WorkshopConfig {
   openshiftAiUrl: string;
   tutorialUrls: TutorialEntry[];
+  showTabs: boolean;
 }
 
 const DEFAULT_CONFIG: WorkshopConfig = {
@@ -27,6 +28,7 @@ const DEFAULT_CONFIG: WorkshopConfig = {
     { name: 'Voice Agents', url: 'https://eformat.github.io/voice-agents/voice-agents/index.html' },
     { name: 'Rainforest', url: 'https://eformat.github.io/rainforest-docs' },
   ],
+  showTabs: true,
 };
 
 function useWorkshopConfig(): WorkshopConfig {
@@ -42,6 +44,7 @@ function useWorkshopConfig(): WorkshopConfig {
         const merged: Partial<WorkshopConfig> = {};
         if (data.openshiftAiUrl) merged.openshiftAiUrl = data.openshiftAiUrl;
         if (Array.isArray(data.tutorialUrls)) merged.tutorialUrls = data.tutorialUrls;
+        if (typeof data.showTabs === 'boolean') merged.showTabs = data.showTabs;
         setConfig((prev) => ({ ...prev, ...merged }));
       })
       .catch(() => {});
@@ -177,7 +180,7 @@ export default function RhaiWorkshopPage() {
     };
   }, []);
 
-  const showTabs = config.tutorialUrls.length > 1;
+  const showTabs = config.showTabs && config.tutorialUrls.length > 1;
   const currentUrl = config.tutorialUrls[activeTab]?.url || '';
 
   return (

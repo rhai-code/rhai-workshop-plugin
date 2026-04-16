@@ -38,6 +38,7 @@ metadata:
   name: workshop-config
   namespace: rhai-workshop-plugin
 data:
+  showTabs: "true"
   tutorialUrls: |
     [
       {"name": "Voice Agents", "url": "https://eformat.github.io/voice-agents/voice-agents/index.html"},
@@ -159,10 +160,12 @@ spec:
             echo "Discovered openshiftAiUrl: $OPENSHIFT_AI_URL"
           fi
           TUTORIAL_URLS=$(cat /config/tutorialUrls)
+          SHOW_TABS=$(cat /config/showTabs 2>/dev/null || echo "true")
           cat > /config-out/config.json <<EOF
           {
             "openshiftAiUrl": "${OPENSHIFT_AI_URL}",
-            "tutorialUrls": ${TUTORIAL_URLS}
+            "tutorialUrls": ${TUTORIAL_URLS},
+            "showTabs": ${SHOW_TABS}
           }
           EOF
         volumeMounts:
