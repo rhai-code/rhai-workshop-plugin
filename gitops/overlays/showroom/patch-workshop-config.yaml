@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workshop-config
+  namespace: rhai-workshop-plugin
+data:
+  showroomDefaults: |
+    "guid": "abc123"
+    "bastion_public_hostname": "bastion.example.com"
+    "bastion_ssh_user_name": "lab-user"
+    "bastion_ssh_password": "%bastion_ssh_password%"
+    "openshift_console_url": "https://console-openshift-console.apps.cluster.example.com"
+    "openshift_cluster_ingress_domain": "apps.cluster.example.com"
+    "openshift_api_url": "https://api.cluster.example.com:6443"
+    "user": "user-abc123"
+    "password": "%password%"

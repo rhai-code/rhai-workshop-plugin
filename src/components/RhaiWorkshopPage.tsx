@@ -31,11 +31,60 @@ const DEFAULT_CONFIG: WorkshopConfig = {
   showTabs: true,
 };
 
-function useWorkshopConfig(): WorkshopConfig {
-  const [config, setConfig] = React.useState<WorkshopConfig>(DEFAULT_CONFIG);
+const PLUGIN_BASE = '/api/plugins/rhai-workshop-plugin';
+
+// Detect the logged-in user's guid and rewrite tutorial URLs through the
+// per-user showroom proxy when the watcher has configured one.
+function rewriteTutorialUrls(urls: TutorialEntry[], guid: string): TutorialEntry[] {
+  return urls.map((entry) => {
+    const match = entry.url.match(/^https:\/\/([^/]+)(\/.*)/);
+    if (!match) return entry;
+    let path = match[2];
+    // Ensure directory-style paths end with / to avoid 301 redirects that
+    // break relative URL resolution through the console proxy chain.
+    if (!path.endsWith('/') && !path.includes('.')) {
+      path += '/';
+    }
+    return {
+      ...entry,
+      url: `${PLUGIN_BASE}/tutorial-proxy/${guid}${path}`,
+    };
+  });
+}
+
+function useCurrentUserGuid(): string | null {
+  const [guid, setGuid] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    fetch('/api/plugins/rhai-workshop-plugin/config.json')
+    // Fetch proxy-users.json (served by the plugin's own nginx)
+    // and the current OpenShift user identity in parallel.
+    Promise.all([
+      fetch(`${PLUGIN_BASE}/proxy-users.json`)
+        .then((r) => (r.ok ? r.json() : []))
+        .catch(() => []) as Promise<string[]>,
+      fetch('/api/kubernetes/apis/user.openshift.io/v1/users/~')
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null) as Promise<any>,
+    ]).then(([proxyUsers, user]) => {
+      if (!user?.metadata?.name || !Array.isArray(proxyUsers) || proxyUsers.length === 0) return;
+      // Username format: "user-<guid>" → extract guid
+      const username: string = user.metadata.name;
+      const m = username.match(/^user-(.+)$/);
+      if (m && proxyUsers.includes(m[1])) {
+        setGuid(m[1]);
+      }
+    });
+  }, []);
+
+  return guid;
+}
+
+function useWorkshopConfig(): WorkshopConfig {
+  const [config, setConfig] = React.useState<WorkshopConfig>(DEFAULT_CONFIG);
+  const guid = useCurrentUserGuid();
+
+  React.useEffect(() => {
+    fetch(`${PLUGIN_BASE}/config.json`)
       .then((res) => {
         if (res.ok) return res.json();
         throw new Error('config not found');
@@ -50,7 +99,11 @@ function useWorkshopConfig(): WorkshopConfig {
       .catch(() => {});
   }, []);
 
-  return config;
+  // When we know the user's guid and the proxy is available, rewrite URLs
+  return React.useMemo(() => {
+    if (!guid) return config;
+    return { ...config, tutorialUrls: rewriteTutorialUrls(config.tutorialUrls, guid) };
+  }, [config, guid]);
 }
 
 // Find the xterm textarea in the active terminal tab and paste text into it.
