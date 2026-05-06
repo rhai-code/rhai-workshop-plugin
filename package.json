@@ -58,7 +58,8 @@
     "displayName": "RHAI Workshop Console Plugin",
     "description": "RHAI Workshop Console Plugin - side-by-side OpenShift AI and tutorial with terminal integration",
     "exposedModules": {
-      "RhaiWorkshopPage": "./components/RhaiWorkshopPage"
+      "RhaiWorkshopPage": "./components/RhaiWorkshopPage",
+      "perspective": "./utils/perspective"
     },
     "dependencies": {
       "@console/pluginAPI": "*"

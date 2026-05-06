@@ -1,5 +1,15 @@
 [
   {
+    "type": "console.perspective",
+    "properties": {
+      "id": "rhai-workshop",
+      "name": "RHAI Workshop",
+      "icon": { "$codeRef": "perspective.icon" },
+      "landingPageURL": { "$codeRef": "perspective.getLandingPageURL" },
+      "importRedirectURL": { "$codeRef": "perspective.getImportRedirectURL" }
+    }
+  },
+  {
     "type": "console.page/route",
     "properties": {
       "exact": true,
@@ -10,11 +20,10 @@
   {
     "type": "console.navigation/href",
     "properties": {
-      "id": "rhai-workshop",
-      "name": "Workshops",
+      "id": "rhai-workshop-perspective-home",
+      "name": "Workshop",
       "href": "/rhai-workshop",
-      "perspective": "admin",
-      "section": "rhai"
+      "perspective": "rhai-workshop"
     }
   }
 ]
